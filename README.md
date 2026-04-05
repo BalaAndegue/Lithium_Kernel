@@ -4,18 +4,6 @@
 A minimal UNIX-like kernel for RISC-V architecture.  
 Inspired by xv6, rewritten and modularized for learning and experimentation.
 
-## Table of Contents
-
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Build Commands](#build-commands)
-- [Module Breakdown](#module-breakdown)
-- [Team](#team)
-- [License](#license)
-
-
-
 ## Architecture
 
 | Component           | Specification                          |
@@ -28,8 +16,6 @@ Inspired by xv6, rewritten and modularized for learning and experimentation.
 | Toolchain           | `riscv64-unknown-elf-gcc`              |
 | Debugging           | GDB + QEMU (port 1234)                 |
 
-
-
 ## Project Structure
 
 ```
@@ -40,57 +26,37 @@ lithium-kernel/
 ├── .gitignore
 ├── .gdbinit
 │
+├── include/
+│   ├── kernel/
+│   │   ├── fs/                 # FS headers (block, buffer, file, inode, log, pipe, virtio)
+│   │   ├── io/                 # I/O headers (console, debug, uart, printk, trace)
+│   │   ├── mem/                # Memory headers (kmalloc, layout, operations, spinlock)
+│   │   ├── proc/               # Process headers (control, elf, process, scheduler)
+│   │   ├── sys/                # Syscall headers (number, syscall)
+│   │   ├── trap/               # Trap headers (plic, trap)
+│   │   ├── param.h
+│   │   └── types.h
+│   ├── make_fs/                # Disk image builder headers
+│   ├── riscv/                  # RISC-V specific headers
+│   └── user/                   # User space headers
+│
 ├── kernel/
 │   ├── entry.S                 # Boot entry point (assembly)
 │   ├── kernel.ld               # Linker script
 │   ├── main.c                  # kernel_main() – initialization
 │   ├── setup.c                 # Low-level CPU setup
-│   │
-│   ├── fs/                     # File system
-│   │   ├── fs.c                # Block cache, superblock
-│   │   ├── inode.c             # Inode management
-│   │   └── file.c              # File descriptors
-│   │
-│   ├── io/                     # Drivers
-│   │   ├── uart.c              # Serial console (NS16550a)
-│   │   ├── virtio.c            # VirtIO block device
-│   │   └── console.c           # printf() wrapper
-│   │
+│   ├── fs/                     # File system implementation
+│   ├── io/                     # Drivers (UART, console, debug)
 │   ├── mem/                    # Memory management
-│   │   ├── physmem.c           # Physical page allocator (bitmap)
-│   │   └── paging.c            # SV39 page tables
-│   │
-│   ├── proc/                   # Process management
-│   │   ├── proc.c              # fork(), exec(), exit(), wait()
-│   │   ├── scheduler.c         # Round-robin scheduler
-│   │   └── switch.S            # Context switch (assembly)
-│   │
-│   ├── sys/                    # System calls
-│   │   └── syscall.c           # Syscall dispatcher
-│   │
-│   └── trap/                   # Traps & interrupts
-│       ├── trap.c              # Unified trap handler
-│       └── plic.c              # Timer interrupts
+│   ├── proc/                   # Process management + scheduler
+│   └── sys/                    # System calls
 │
-├── include/                    # Shared headers
-│   ├── types.h                 # uint32, uint64, etc.
-│   ├── defs.h                  # Common prototypes
-│   ├── riscv.h                 # CSR macros
-│   └── spinlock.h              # Synchronization primitives
-│
-├── user/                       # User space
-│   ├── init.c                  # First user program
-│   ├── ulib.c                  # Syscall wrappers
-│   └── printf.c                # User-space printf()
-│
-├── tools/
-│   └── mkfs.c                  # Disk image builder
-│
-└── make_fs/
-    └── fs.img                  # Generated disk image
-
+├── make_fs/                    # Disk image build directory
+├── tools/                      # Host utilities
+└── user/                       # User programs
+    ├── progs/                  # User binaries
+    └── ulibc/                  # User libc
 ```
-
 
 ## Quick Start
 
@@ -111,10 +77,10 @@ sudo pacman -S riscv64-elf-gcc qemu-system-riscv gdb-multiarch make
 brew install riscv-tools qemu gdb
 ```
 
-### 2. Clone / Create Project
+### 2. Build
 
 ```bash
-cd ~/lithium-kernel
+make clean
 make
 ```
 
@@ -147,8 +113,6 @@ gdb-multiarch kernel/kernel.elf
 (gdb) continue
 ```
 
----
-
 ## Build Commands
 
 | Command       | Description                                      |
@@ -160,22 +124,18 @@ gdb-multiarch kernel/kernel.elf
 | `make fs`     | Build disk image (`make_fs/fs.img`)              |
 | `make all`    | Build kernel + disk image                        |
 
----
-
 ## Module Breakdown
 
-| Module     | Files                                      | Description                                                                 |
-|------------|--------------------------------------------|-----------------------------------------------------------------------------|
-| **Boot**   | `entry.S`, `kernel.ld`, `setup.c`          | CPU initialization, stack setup, jump to `kernel_main()`                    |
-| **Memory** | `physmem.c`, `paging.c`                    | Physical page allocator (first-fit bitmap), SV39 page tables                |
-| **Proc**   | `proc.c`, `scheduler.c`, `switch.S`        | Process lifecycle (`fork`, `exec`, `exit`, `wait`), round-robin scheduler   |
-| **Trap**   | `trap.c`, `plic.c`                         | Exception handling, interrupt routing, timer interrupts                     |
-| **Syscall**| `syscall.c`                                | User→kernel interface (`write`, `read`, `fork`, `exec`, `exit`, `wait`)      |
-| **Driver** | `uart.c`, `virtio.c`, `console.c`          | Serial output, block device I/O                                             |
-| **FS**     | `fs.c`, `inode.c`, `file.c`                | Simple UNIX file system (inodes, directories, block cache)                  |
-| **User**   | `init.c`, `ulib.c`                         | First user process, system call wrappers                                    |
-
----
+| Module     | Location               | Description                                                                 |
+|------------|------------------------|-----------------------------------------------------------------------------|
+| **Boot**   | `entry.S`, `setup.c`   | CPU initialization, stack setup, jump to `kernel_main()`                    |
+| **Memory** | `mem/`                 | Physical page allocator (first-fit bitmap), SV39 page tables                |
+| **Proc**   | `proc/`                | Process lifecycle (`fork`, `exec`, `exit`, `wait`), round-robin scheduler   |
+| **Trap**   | `trap/`                | Exception handling, interrupt routing, timer interrupts                     |
+| **Syscall**| `sys/`                 | User→kernel interface (`write`, `read`, `fork`, `exec`, `exit`, `wait`)      |
+| **Driver** | `io/`                  | Serial output (UART), console I/O                                           |
+| **FS**     | `fs/`                  | Simple UNIX file system (inodes, directories, block cache, VirtIO disk)     |
+| **User**   | `user/`                | First user process (`init`), system call wrappers                           |
 
 ## Key Data Structures
 
@@ -212,8 +172,6 @@ typedef uint64 pte_t;
 #define PTE_U (1 << 4)        // User accessible
 ```
 
----
-
 ## Coding Conventions
 
 | Rule                          | Rationale                                     |
@@ -221,13 +179,11 @@ typedef uint64 pte_t;
 | 4-space indentation, no tabs  | Consistency across editors                    |
 | `snake_case` for functions    | UNIX kernel style                             |
 | `UPPER_CASE` for macros       | Standard C practice                           |
-| `/* comment */` for multi-line| C89 compatibility (some toolchains)           |
+| `/* comment */` for multi-line| C89 compatibility                             |
 | `// comment` for single-line  | Permitted in C17                              |
 | No dynamic allocation after boot | Deterministic memory usage                 |
 | Every `alloc` has matching `free` | Prevent memory leaks                      |
 | Validate all user pointers    | Security (kernel must not crash on bad input) |
-
----
 
 ## Debugging Tips
 
@@ -260,41 +216,70 @@ typedef uint64 pte_t;
 (gdb) disas
 ```
 
----
+## Makefile Example
 
-## Performance Notes
+```makefile
+CROSS_COMPILE = riscv64-unknown-elf-
+CC = $(CROSS_COMPILE)gcc
+LD = $(CROSS_COMPILE)ld
+QEMU = qemu-system-riscv64
 
-| Component           | Current | Target | Notes                                    |
-|---------------------|---------|--------|------------------------------------------|
-| Physical allocator  | O(n)    | O(1)   | First-fit bitmap is fine for <128MB      |
-| Page table walk     | O(3)    | O(3)   | SV39 fixed 3-level walk                  |
-| Scheduler           | O(n)    | O(1)   | Round-robin with runqueue improves later |
-| Block cache         | LRU     | LRU    | 16-entry cache is sufficient             |
+CFLAGS = -Wall -Werror -O2 -fno-omit-frame-pointer -ggdb -gdwarf-2
+CFLAGS += -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib
+CFLAGS += -mno-relax -I include
 
----
+LDFLAGS = -T kernel/kernel.ld -z max-page-size=4096
 
-## Future Improvements (Post-2 Months)
+KERNEL_OBJS = \
+	kernel/entry.o \
+	kernel/main.o \
+	kernel/setup.o \
+	kernel/io/uart.o \
+	kernel/io/console.o \
+	kernel/mem/operations.o \
+	kernel/mem/kmalloc.o \
+	kernel/mem/spinlock.o \
+	kernel/mem/virtual_memory.o \
+	kernel/proc/process.o \
+	kernel/proc/scheduler.o \
+	kernel/proc/control.o \
+	kernel/proc/exec.o \
+	kernel/proc/switch_context.o \
+	kernel/sys/syscall.o
 
-- [ ] Copy-on-Write (COW) for `fork()`
-- [ ] Demand paging (lazy allocation)
-- [ ] Symmetric Multi-Processing (SMP)
-- [ ] Network driver (VirtIO-Net)
-- [ ] ELF loader with shared libraries
-- [ ] Pipe implementation for IPC
-- [ ] Signals and alarm()
+KERNEL = kernel/kernel.elf
 
----
+all: $(KERNEL)
+
+$(KERNEL): $(KERNEL_OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o: %.S
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f $(KERNEL_OBJS) $(KERNEL)
+
+qemu: $(KERNEL)
+	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic
+
+debug: $(KERNEL)
+	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic -s -S
+
+.PHONY: all clean qemu debug
+```
 
 ## Team
 
 | Name              | Role                    | Primary Modules                    |
 |-------------------|-------------------------|-------------------------------------|
 | Bala Andegue      | Team Lead / Scheduler   | `proc/`, `scheduler.c`, `user/`     |
-| Gabrielle Nana    | Memory Manager          | `mem/`, `paging.c`, `physmem.c`     |
-| Israel Teme       | Syscall / Trap Engineer | `sys/`, `trap/`, `switch.S`         |
-| Tamwo Steveson    | FS / Driver Engineer    | `fs/`, `io/`, `virtio.c`, `uart.c`  |
-
----
+| Gabrielle Nana    | Memory Manager          | `mem/`, `virtual_memory.c`          |
+| Israel Teme       | Syscall / Trap Engineer | `sys/`, `trap/`, `switch_context.S` |
+| Tamwo Steveson    | FS / Driver Engineer    | `fs/`, `io/`, `virtio_disk.c`       |
 
 ## License
 
@@ -309,8 +294,6 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions...
 
----
-
 ## References
 
 - [xv6 source code](https://pdos.csail.mit.edu/6.828/2020/xv6.html)
@@ -322,3 +305,25 @@ furnished to do so, subject to the following conditions...
 
 **Status**: 🟡 In development – Week 1 (Boot + UART)  
 **Last updated**: \today
+```
+
+## Fichiers supplémentaires à créer
+
+Pour que le `README.md` soit complet, assurez-vous d'avoir aussi ces fichiers :
+
+### `.gitignore`
+```
+*.o
+*.elf
+*.img
+*.bin
+*.log
+build/
+```
+
+### `.gdbinit`
+```
+set confirm off
+target remote :1234
+break main.c:42
+continue
