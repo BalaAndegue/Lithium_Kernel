@@ -305,25 +305,5 @@ furnished to do so, subject to the following conditions...
 
 **Status**: 🟡 In development – Week 1 (Boot + UART)  
 **Last updated**: \today
-```
 
-## Fichiers supplémentaires à créer
 
-Pour que le `README.md` soit complet, assurez-vous d'avoir aussi ces fichiers :
-
-### `.gitignore`
-```
-*.o
-*.elf
-*.img
-*.bin
-*.log
-build/
-```
-
-### `.gdbinit`
-```
-set confirm off
-target remote :1234
-break main.c:42
-continue
