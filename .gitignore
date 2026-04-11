@@ -3,4 +3,5 @@
 *.img
 *.bin
 *.log
+*.d
 build/
