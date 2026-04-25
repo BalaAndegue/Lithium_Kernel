@@ -18,6 +18,19 @@ void kernel_main(void)
     physmem_init();
     paging_init();
     
+    // Test memory allocation by allocating and freeing pages
+    uint64 page1 = physmem_alloc_page();
+    printf("Allocated page at: %p\n", (void*)page1);
+    
+    uint64 page2 = physmem_alloc_page();
+    printf("Allocated page at: %p\n", (void*)page2);
+    
+    free_physical_page(page1);
+    printf("Freed page at: %p\n", (void*)page1);
+    
+    uint64 free_pages = get_free_pages_count();
+    printf("Free pages: %d\n", free_pages);
+    
     printf("\nMemory management initialized successfully!\n");
     
     // Keep the kernel running
