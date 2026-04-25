@@ -1,3 +1,4 @@
+
 CROSS_COMPILE = riscv64-unknown-elf-
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
@@ -9,23 +10,40 @@ CFLAGS += -mno-relax -I include
 
 LDFLAGS = -T kernel/kernel.ld -z max-page-size=4096
 
-KERNEL_OBJS = \
+# ============================================================================
+# Bloc 1: Boot + UART
+# ============================================================================
+BLOCK1_OBJS = \
 	kernel/entry.o \
-	kernel/main.o \
-	kernel/setup.o \
+	kernel/main.o
+
+# ============================================================================
+# Bloc 2: Memory Management
+# ============================================================================
+BLOCK2_OBJS = \
 	kernel/io/uart.o \
 	kernel/io/console.o \
-	kernel/mem/operations.o \
-	kernel/mem/kmalloc.o \
-	kernel/mem/spinlock.o \
-	kernel/mem/virtual_memory.o \
-	kernel/proc/process.o \
-	kernel/proc/scheduler.o \
-	kernel/proc/control.o \
-	kernel/proc/exec.o \
-	kernel/proc/switch_context.o \
-	kernel/sys/syscall.o
+	kernel/mem/physmem.o \
+	kernel/mem/paging.o
 
+# ============================================================================
+# Bloc 3: Processus (à décommenter plus tard)
+# ============================================================================
+# BLOCK3_OBJS = \
+# 	kernel/proc/process.o \
+# 	kernel/proc/scheduler.o \
+# 	kernel/proc/switch_context.o
+
+# ============================================================================
+# Bloc 4: System calls (à décommenter plus tard)
+# ============================================================================
+# BLOCK4_OBJS = \
+# 	kernel/sys/syscall.o
+
+# ============================================================================
+# Assemblage final
+# ============================================================================
+KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS)
 KERNEL = kernel/kernel.elf
 
 all: $(KERNEL)
