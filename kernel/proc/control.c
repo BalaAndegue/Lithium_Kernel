@@ -79,24 +79,43 @@ void exit(int status)
 // Attendre qu'un enfant se termine et récupérer son code de sortie
 int wait(uint64 status_addr)
 {
-    // Chercher un enfant qui est un zombie
     for (int i = 0; i < NPROC; i++) {
         struct proc *child = &proc_table[i];
         if (child->parent == current_process && child->state == PROC_ZOMBIE) {
-            // Enfant trouvé!
             int pid = child->pid;
-            
-            // Copier le code de sortie à l'adresse donnée
             *(int*)status_addr = child->exit_code;
-            
-            // Libérer les ressources de l'enfant
             free_proc(child);
-            
             return pid;
         }
     }
-    return -1;  // Pas d'enfant trouvé
+    return -1;
 }
 
-void sleep(void *chan) {}
-void wakeup(void *chan) {}
+// Mettre le processus courant en sleep (en attente)
+void sleep(void *chan)
+{
+    struct proc *p = current_process;
+    if (p == NULL) return;
+    
+    (void)chan;  // Paramètre non utilisé pour le moment
+    
+    // Marquer le processus comme dormant
+    p->state = PROC_SLEEPING;
+    
+    // Appeler l'ordonnanceur pour choisir un autre processus
+    scheduler();
+}
+
+// Réveiller tous les processus qui dorment
+void wakeup(void *chan)
+{
+    (void)chan;  // Paramètre non utilisé pour le moment
+    
+    // Parcourir tous les processus
+    for (int i = 0; i < NPROC; i++) {
+        // Si c'est un qui dort, le rendre exécutable
+        if (proc_table[i].state == PROC_SLEEPING) {
+            proc_table[i].state = PROC_RUNNABLE;
+        }
+    }
+}
