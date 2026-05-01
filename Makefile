@@ -1,68 +1,76 @@
-
 CROSS_COMPILE = riscv64-unknown-elf-
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 QEMU = qemu-system-riscv64
 
+# Options du compilateur C
 CFLAGS = -Wall -Werror -O2 -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib
 CFLAGS += -mno-relax -I include
 
+# Options de l'éditeur de liens
 LDFLAGS = -T kernel/kernel.ld -z max-page-size=4096
 
-# ============================================================================
-# Bloc 1: Boot + UART
-# ============================================================================
+# ===========================================================================
+# Bloc 1: Boot + UART (démarrage et communication)
+# ===========================================================================
 BLOCK1_OBJS = \
 	kernel/entry.o \
 	kernel/main.o
 
-# ============================================================================
-# Bloc 2: Memory Management
-# ============================================================================
+# ===========================================================================
+# Bloc 2: Gestion de la mémoire
+# ===========================================================================
 BLOCK2_OBJS = \
 	kernel/io/uart.o \
 	kernel/io/console.o \
 	kernel/mem/physmem.o \
 	kernel/mem/paging.o
 
-# ============================================================================
-# Bloc 3: Processus (à décommenter plus tard)
-# ============================================================================
-# BLOCK3_OBJS = \
-# 	kernel/proc/process.o \
-# 	kernel/proc/scheduler.o \
-# 	kernel/proc/switch_context.o
+# ===========================================================================
+# Bloc 3: Gestion des processus
+# ===========================================================================
+BLOCK3_OBJS = \
+	kernel/proc/process.o \
+	kernel/proc/control.o \
+	kernel/proc/scheduler.o \
+	kernel/proc/switch_context.o
 
-# ============================================================================
-# Bloc 4: System calls (à décommenter plus tard)
-# ============================================================================
+# ===========================================================================
+# Bloc 4: Appels système (à uncomment plus tard)
+# ===========================================================================
 # BLOCK4_OBJS = \
 # 	kernel/sys/syscall.o
 
-# ============================================================================
-# Assemblage final
-# ============================================================================
-KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS)
+# ===========================================================================
+# Lier tous les fichiers pour créer le kernel
+# ===========================================================================
+KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS)
 KERNEL = kernel/kernel.elf
 
+# Règle par défaut: construire le kernel
 all: $(KERNEL)
 
+# Lier les objets en un seul exécutable
 $(KERNEL): $(KERNEL_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
 
+# Compiler les fichiers C en objets
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+# Compiler les fichiers assembleur en objets
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(KERNEL_OBJS) $(KERNEL)
 
+# Exécuter le kernel dans QEMU
 qemu: $(KERNEL)
 	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic
 
+# Exécuter en mode debug (attendre gdb)
 debug: $(KERNEL)
 	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic -s -S
 
