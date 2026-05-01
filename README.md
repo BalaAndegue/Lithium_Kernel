@@ -6,8 +6,12 @@ Inspired by xv6, this implementation focuses on educational clarity with modular
 
 ## Academic Supervision
 
-**Professor Alain Tchana** - Process and memory management modules  
-**Professor Daniel Hagimont** - System architecture and design
+**Professor Alain Tchana** - Process and memory management modules
+
+## Project Team
+- **Gabrielle Nana**
+- **Teme Israel** 
+- **Tamwo Steve**
 
 ## Educational Objectives
 
