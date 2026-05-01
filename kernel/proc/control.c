@@ -15,7 +15,6 @@
 // Créer un processus enfant (copie du processus courant)
 int fork(void)
 {
-    // Récupérer le processus parent (courant)
     struct proc *parent = current_process;
     if (parent == NULL) return -1;
     
@@ -65,23 +64,39 @@ void exit(int status)
     
     printf("exit: process %d exited with status %d\n", p->pid, status);
     
-    // Sauvegarder le code de sortie
     p->exit_code = status;
-    
-    // Marquer le processus comme zombie (mort mais pas libéré)
     p->state = PROC_ZOMBIE;
     
-    // Réveiller le parent s'il attend
     if (p->parent != NULL) {
         wakeup(p->parent);
     }
     
-    // Attendre indéfiniment 
     while (1) {
-        asm volatile("wfi");  // Wait For Interrupt
+        asm volatile("wfi");
     }
 }
 
-int wait(uint64 status_addr) { return -1; }
+// Attendre qu'un enfant se termine et récupérer son code de sortie
+int wait(uint64 status_addr)
+{
+    // Chercher un enfant qui est un zombie
+    for (int i = 0; i < NPROC; i++) {
+        struct proc *child = &proc_table[i];
+        if (child->parent == current_process && child->state == PROC_ZOMBIE) {
+            // Enfant trouvé!
+            int pid = child->pid;
+            
+            // Copier le code de sortie à l'adresse donnée
+            *(int*)status_addr = child->exit_code;
+            
+            // Libérer les ressources de l'enfant
+            free_proc(child);
+            
+            return pid;
+        }
+    }
+    return -1;  // Pas d'enfant trouvé
+}
+
 void sleep(void *chan) {}
 void wakeup(void *chan) {}
