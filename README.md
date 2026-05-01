@@ -1,8 +1,21 @@
 
 # Lithium Kernel
 
-A minimal UNIX-like kernel for RISC-V architecture.  
-Inspired by xv6, rewritten and modularized for learning and experimentation.
+A minimal UNIX-like kernel for RISC-V architecture, developed as part of an operating systems course.  
+Inspired by xv6, this implementation focuses on educational clarity with modular design and comprehensive documentation.
+
+## Academic Supervision
+
+**Professor Alain Tchana** - Process and memory management modules  
+**Professor Daniel Hagimont** - System architecture and design
+
+## Educational Objectives
+
+- Understand operating system fundamentals through hands-on implementation
+- Master RISC-V assembly and low-level programming
+- Implement core OS abstractions: processes, memory management, scheduling
+- Develop professional software engineering practices in kernel development
+- Document implementation decisions and design choices
 
 ## Architecture
 
@@ -21,39 +34,68 @@ Inspired by xv6, rewritten and modularized for learning and experimentation.
 ```
 lithium-kernel/
 ├── Makefile                    # Build automation
-├── README.md
-├── TODO.md
+├── README.md                   # Project documentation
+├── TODO.md                     # Development roadmap
+├── RAPPORT_BLOC2_MEMOIRE.md    # Memory management report
 ├── .gitignore
 ├── .gdbinit
 │
 ├── include/
 │   ├── kernel/
-│   │   ├── fs/                 # FS headers (block, buffer, file, inode, log, pipe, virtio)
-│   │   ├── io/                 # I/O headers (console, debug, uart, printk, trace)
-│   │   ├── mem/                # Memory headers (kmalloc, layout, operations, spinlock)
-│   │   ├── proc/               # Process headers (control, elf, process, scheduler)
-│   │   ├── sys/                # Syscall headers (number, syscall)
+│   │   ├── fs/                 # File system headers (block, buffer, file, inode, log, pipe, virtio)
+│   │   ├── io/                 # I/O headers (console, debug, uart, printk, trace, kpanic)
+│   │   ├── mem/                # Memory headers (kmalloc, layout, operations, paging, physmem, spinlock, virtual_memory)
+│   │   ├── proc/               # Process headers (control, elf, globals, process, scheduler)
+│   │   ├── sys/                # System call headers (number, syscall)
 │   │   ├── trap/               # Trap headers (plic, trap)
-│   │   ├── param.h
-│   │   └── types.h
+│   │   ├── param.h             # Kernel parameters
+│   │   └── types.h             # Type definitions
 │   ├── make_fs/                # Disk image builder headers
-│   ├── riscv/                  # RISC-V specific headers
-│   └── user/                   # User space headers
+│   ├── riscv/                  # RISC-V specific headers (intrinsics, defs, utils, virtual_memory)
+│   └── user/                   # User space headers (fnctl, limits, syscall, ulibc)
 │
 ├── kernel/
 │   ├── entry.S                 # Boot entry point (assembly)
 │   ├── kernel.ld               # Linker script
 │   ├── main.c                  # kernel_main() – initialization
 │   ├── setup.c                 # Low-level CPU setup
-│   ├── fs/                     # File system implementation
-│   ├── io/                     # Drivers (UART, console, debug)
+│   ├── fs/                     # File system implementation (mostly stubs)
+│   │   ├── block.c             # Block device interface
+│   │   ├── buffer.c            # Buffer cache
+│   │   ├── file.c              # File operations
+│   │   ├── file_system.c       # File system core
+│   │   ├── inode.c             # Inode management
+│   │   ├── log.c               # File system logging
+│   │   ├── pipe.c              # Pipe implementation
+│   │   ├── sleeplock.c         # Sleep locks
+│   │   └── virtio_disk.c       # VirtIO disk driver
+│   ├── io/                     # Drivers
+│   │   ├── console.c           # Console I/O (implemented)
+│   │   ├── debug.c             # Debug utilities
+│   │   ├── kpanic.c            # Kernel panic handling
+│   │   ├── printk.c            # Formatted printing
+│   │   ├── trace.c             # Execution tracing
+│   │   └── uart.c              # UART driver (implemented)
 │   ├── mem/                    # Memory management
-│   ├── proc/                   # Process management + scheduler
-│   └── sys/                    # System calls
+│   │   ├── kmalloc.c           # Kernel memory allocator
+│   │   ├── operations.c        # Memory operations
+│   │   ├── paging.c            # Page table management (implemented)
+│   │   ├── physmem.c           # Physical memory allocator (implemented)
+│   │   ├── spinlock.c          # Spin locks
+│   │   ├── virtual_memory.c    # Virtual memory utilities
+│   │   └── layout.h            # Memory layout definitions
+│   ├── proc/                   # Process management (Bloc 3 - implemented)
+│   │   ├── control.c           # Process control (fork, exit, wait, sleep, wakeup)
+│   │   ├── exec.c              # Program execution (stub)
+│   │   ├── process.c           # Process lifecycle management
+│   │   ├── scheduler.c         # Round-robin scheduler
+│   │   └── switch_context.S    # Context switching (assembly)
+│   ├── sys/                    # System calls (stubs)
+│   └── trap/                   # Exception handling (stubs)
 │
 ├── make_fs/                    # Disk image build directory
 ├── tools/                      # Host utilities
-└── user/                       # User programs
+└── user/                       # User programs (stubs)
     ├── progs/                  # User binaries
     └── ulibc/                  # User libc
 ```
@@ -90,13 +132,13 @@ make
 make qemu
 ```
 
-Expected output:
+Expected output (Bloc 1 + Bloc 2 + Bloc 3):
 ```
 Lithium Kernel starting...
 uart initialized.
 mem_init: 128 MB available
-proc_init: 64 process slots ready
-timer_init: CLINT configured
+proc_init: initializing process subsystem
+proc_init: init process PID=1
 scheduler: entering main loop
 ```
 
@@ -121,55 +163,110 @@ gdb-multiarch kernel/kernel.elf
 | `make clean`  | Remove all object files and kernel image         |
 | `make qemu`   | Launch QEMU with the kernel                      |
 | `make debug`  | Launch QEMU in debug mode (listening on port 1234)|
-| `make fs`     | Build disk image (`make_fs/fs.img`)              |
-| `make all`    | Build kernel + disk image                        |
+| `make fs`     | Build disk image (`make_fs/fs.img`) - Not implemented |
+| `make all`    | Build kernel + disk image - Not implemented      |
+
+## Development Progress
+
+### Completed Blocks
+- **Bloc 1**: Boot + Console ✅ (Semaine 1)
+- **Bloc 2**: Memory Management ✅ (Semaine 2) - Report: `RAPPORT_BLOC2_MEMOIRE.md`
+- **Bloc 3**: Process Management ✅ (Semaine 3-4) - 13 commits pushed
+
+### Current Status
+- **Bloc 4**: System calls + Traps (Semaine 5) - In progress
+- **Bloc 5**: File System + Drivers (Semaine 6-7) - Planned
+- **Bloc 6**: User Space (Semaine 8) - Planned
+
+### Documentation
+- `RAPPORT_BLOC2_MEMOIRE.md`: Detailed memory management implementation report
+- `TODO.md`: Development roadmap and task breakdown
+- All code includes French comments for clarity
 
 ## Module Breakdown
 
-| Module     | Location               | Description                                                                 |
-|------------|------------------------|-----------------------------------------------------------------------------|
-| **Boot**   | `entry.S`, `setup.c`   | CPU initialization, stack setup, jump to `kernel_main()`                    |
-| **Memory** | `mem/`                 | Physical page allocator (first-fit bitmap), SV39 page tables                |
-| **Proc**   | `proc/`                | Process lifecycle (`fork`, `exec`, `exit`, `wait`), round-robin scheduler   |
-| **Trap**   | `trap/`                | Exception handling, interrupt routing, timer interrupts                     |
-| **Syscall**| `sys/`                 | User→kernel interface (`write`, `read`, `fork`, `exec`, `exit`, `wait`)      |
-| **Driver** | `io/`                  | Serial output (UART), console I/O                                           |
-| **FS**     | `fs/`                  | Simple UNIX file system (inodes, directories, block cache, VirtIO disk)     |
-| **User**   | `user/`                | First user process (`init`), system call wrappers                           |
+| Module     | Location               | Status | Description                                                                 |
+|------------|------------------------|--------|-----------------------------------------------------------------------------|
+| **Boot**   | `entry.S`, `setup.c`   | ✅ Implémenté | CPU initialization, stack setup, jump to `kernel_main()`                    |
+| **Memory** | `mem/`                 | 🟡 Partiel | Physical page allocator (bitmap), SV39 page tables (paging.c, physmem.c implémentés) |
+| **Proc**   | `proc/`                | ✅ Implémenté | Process lifecycle (`fork`, `exit`, `wait`), round-robin scheduler (Bloc 3 terminé) |
+| **Trap**   | `trap/`                | ❌ Stub | Exception handling, interrupt routing, timer interrupts                     |
+| **Syscall**| `sys/`                 | ❌ Stub | User→kernel interface (`write`, `read`, `fork`, `exec`, `exit`, `wait`)      |
+| **Driver** | `io/`                  | 🟡 Partiel | Serial output (UART implémenté), console I/O (console.c implémenté)         |
+| **FS**     | `fs/`                  | ❌ Stub | Simple UNIX file system (inodes, directories, block cache, VirtIO disk)     |
+| **User**   | `user/`                | ❌ Stub | First user process (`init`), system call wrappers                           |
 
 ## Key Data Structures
 
+### Process Management (Implemented in Bloc 3)
+
 ```c
-// Process
+// Process states
+enum proc_state {
+    PROC_UNUSED = 0,    // Not allocated
+    PROC_USED,          // Allocated but not ready
+    PROC_SLEEPING,      // Waiting for event
+    PROC_RUNNABLE,      // Ready to run
+    PROC_RUNNING,       // Currently executing
+    PROC_ZOMBIE         // Terminated, waiting for parent
+};
+
+// Process structure
 struct proc {
-    uint64 sz;                // Process memory size
-    pagetable_t pagetable;    // Page table
-    uint64 kstack;            // Kernel stack
-    enum proc_state state;    // UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE
-    int pid;                  // Process ID
-    struct proc *parent;      // Parent process
-    uint64 trapframe;         // Saved registers
-    uint64 context;           // Switch context
+    enum proc_state state;      // Current state
+    int pid;                    // Process ID
+    struct proc *parent;        // Parent process
+    void *pagetable;            // Page table
+    uint64 sz;                  // Memory size
+    uint64 kstack;              // Kernel stack
+    struct trapframe *trapframe; // Saved registers
+    struct context context;     // CPU context for switching
+    int exit_code;              // Exit status
+    char name[32];              // Process name
 };
 
-// Inode
-struct inode {
-    uint dev;                 // Device number
-    uint inum;                // Inode number
-    int ref;                  // Reference count
-    short type;               // File, directory, device
-    short nlink;              // Number of links
-    uint size;                // File size in bytes
-    uint addrs[NDIRECT+1];    // Direct + indirect block pointers
+// CPU context (preserved registers)
+struct context {
+    uint64 ra, sp, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11;
 };
+```
 
-// Page Table Entry (SV39)
+### Memory Management (Implemented in Bloc 2)
+
+```c
+// Page Table Entry (SV39 format)
 typedef uint64 pte_t;
 #define PTE_V (1 << 0)        // Valid
 #define PTE_R (1 << 1)        // Read
 #define PTE_W (1 << 2)        // Write
 #define PTE_X (1 << 3)        // Execute
 #define PTE_U (1 << 4)        // User accessible
+#define PTE_A (1 << 6)        // Accessed
+#define PTE_D (1 << 7)        // Dirty
+```
+
+### ELF Binary Format (Headers for Bloc 4)
+
+```c
+// ELF file header (64-bit)
+struct elfhdr {
+    uint32 magic;      // 0x464C457F ("\x7FELF")
+    uint16 type;       // Executable, object, etc.
+    uint16 machine;    // RISC-V = 0xF3
+    uint64 entry;      // Entry point address
+    uint64 phoff;      // Program header offset
+    // ... other fields
+};
+
+// Program header (loadable segments)
+struct proghdr {
+    uint32 type;       // Segment type (LOAD = 1)
+    uint32 flags;      // Permissions (R/W/X)
+    uint64 vaddr;      // Virtual address
+    uint64 filesz;     // Size in file
+    uint64 memsz;      // Size in memory
+    // ... other fields
+};
 ```
 
 ## Coding Conventions
@@ -181,9 +278,40 @@ typedef uint64 pte_t;
 | `UPPER_CASE` for macros       | Standard C practice                           |
 | `/* comment */` for multi-line| C89 compatibility                             |
 | `// comment` for single-line  | Permitted in C17                              |
+| French comments in code       | Educational project requirement               |
 | No dynamic allocation after boot | Deterministic memory usage                 |
 | Every `alloc` has matching `free` | Prevent memory leaks                      |
 | Validate all user pointers    | Security (kernel must not crash on bad input) |
+
+## Version Control
+
+The project follows a structured commit approach with logical groupings:
+
+### Recent Commits (Bloc 3 - Process Management)
+- **13 commits** pushed to GitHub with detailed commit messages
+- Each commit represents a logical unit of functionality
+- French comments added throughout the codebase
+- Professional commit messages following conventional standards
+
+## Documentation
+
+### Reports
+- **`RAPPORT_BLOC2_MEMOIRE.md`**: Comprehensive memory management implementation report
+  - Physical memory allocation strategies
+  - Page table management (SV39)
+  - Virtual memory organization
+  - Performance analysis and testing
+
+### Development Roadmap
+- **`TODO.md`**: Detailed task breakdown by development blocks
+- Weekly progression tracking
+- Implementation priorities and dependencies
+
+### Code Documentation
+- All functions include French comments explaining their purpose
+- Data structures are thoroughly documented
+- Implementation decisions are justified in comments
+- Educational approach with clear explanations
 
 ## Debugging Tips
 
