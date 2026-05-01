@@ -1,6 +1,6 @@
 
 // ===========================================================================
-// process.h - Structure et états d'un processus
+// process.h - Définition de la structure d'un processus et ses états
 // ===========================================================================
 
 #ifndef KERNEL_PROC_PROCESS_H
@@ -11,24 +11,26 @@
 // ---------------------------------------------------------------------------
 // États possibles d'un processus
 // ---------------------------------------------------------------------------
+// J'ai défini ces états pour gérer le cycle de vie d'un processus
 enum proc_state {
-    PROC_UNUSED = 0,    // Pas utilisé (libre)
-    PROC_USED,          // Alloué mais pas encore prêt
-    PROC_SLEEPING,      // Dort (attendant un événement)
-    PROC_RUNNABLE,      // Prêt à s'exécuter
-    PROC_RUNNING,       // En cours d'exécution
-    PROC_ZOMBIE         // Terminé, attendant que son parent le nettoie
+    PROC_UNUSED = 0,    // Processus libre, pas encore utilisé
+    PROC_USED,          // Alloué en mémoire mais pas prêt à tourner
+    PROC_SLEEPING,      // En attente d'un événement (comme un wait)
+    PROC_RUNNABLE,      // Prêt à être exécuté par le scheduler
+    PROC_RUNNING,       // En cours d'exécution sur le CPU
+    PROC_ZOMBIE         // Terminé, attend que son parent fasse wait()
 };
 
 // ---------------------------------------------------------------------------
-// Contexte du processeur - registres sauvegardés (partie preserved)
+// Contexte CPU - les registres qu'on doit sauvegarder
 // ---------------------------------------------------------------------------
-// Ces registres doivent être sauvegardés quand on change de processus
+// Quand on change de processus, il faut sauvegarder ces registres
+// qui sont "preserved" selon la convention d'appel RISC-V
 struct context {
-    uint64 ra;      // Adresse de retour
-    uint64 sp;      // Pointeur de pile
-    uint64 s0;      // Registres préservés (6 registres)
-    uint64 s1;
+    uint64 ra;      // Adresse de retour (return address)
+    uint64 sp;      // Pointeur de pile (stack pointer)
+    uint64 s0;      // Registres préservés s0 à s11
+    uint64 s1;      // Ces registres doivent survivre aux appels de fonction
     uint64 s2;
     uint64 s3;
     uint64 s4;
@@ -44,9 +46,10 @@ struct context {
 
 
 // ---------------------------------------------------------------------------
-// Trapframe - sauvegarde de TOUS les registres utilisateur
+// Trapframe - sauvegarde complète des registres utilisateur
 // ---------------------------------------------------------------------------
-// Utilisé pour sauvegarder l'état complet lors d'une interruption ou appel système
+// Structure utilisée lors des interruptions et appels système
+// On sauvegarde tous les registres pour pouvoir reprendre exactement où on était
 struct trapframe {
     uint64 kernel_satp;     // Table des pages du kernel
     uint64 kernel_sp;       // Pile du kernel

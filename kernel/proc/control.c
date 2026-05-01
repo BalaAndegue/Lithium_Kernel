@@ -13,17 +13,22 @@
 #include "kernel/io/console.h"
 
 // Créer un processus enfant (copie du processus courant)
+// C'est la fonction fork() classique d'UNIX
 int fork(void)
 {
+    // Récupérer le processus parent (celui qui appelle fork)
     struct proc *parent = current_process;
     if (parent == NULL) return -1;
     
+    // Allouer une nouvelle structure pour l'enfant
     struct proc *child = alloc_proc();
     if (child == NULL) return -1;
     
+    // Lier l'enfant à son parent
     child->parent = parent;
-    child->sz = parent->sz;
+    child->sz = parent->sz;  // Même taille de mémoire que le parent
     
+    // Allouer une pile pour le kernel de l'enfant
     uint64 kstack_page = physmem_alloc_page();
     if (kstack_page == 0) {
         free_proc(child);
@@ -31,6 +36,7 @@ int fork(void)
     }
     child->kstack = (uint64)phys_to_virt(kstack_page) + PAGE_SIZE;
     
+    // Allouer un trapframe pour sauvegarder les registres
     uint64 trapframe_page = physmem_alloc_page();
     if (trapframe_page == 0) {
         free_proc(child);
@@ -38,21 +44,25 @@ int fork(void)
     }
     child->trapframe = (struct trapframe*)phys_to_virt(trapframe_page);
     
+    // Copier le trapframe du parent (état des registres au moment du fork)
     if (parent->trapframe != NULL) {
         *child->trapframe = *parent->trapframe;
-        child->trapframe->a0 = 0;
+        child->trapframe->a0 = 0;  // Pour l'enfant, fork() retourne 0
     }
     
+    // Créer une nouvelle table des pages pour l'enfant
     child->pagetable = create_page_table();
     if (child->pagetable == NULL) {
         free_proc(child);
         return -1;
     }
     
+    // L'enfant est maintenant prêt à tourner
     child->state = PROC_RUNNABLE;
     
-    printf("fork: created child %d from parent %d\n", child->pid, parent->pid);
+    printf("fork: processus enfant %d créé depuis parent %d\n", child->pid, parent->pid);
     
+    // Retourner le PID de l'enfant au parent
     return child->pid;
 }
 

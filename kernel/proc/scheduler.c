@@ -10,10 +10,11 @@
 #include "kernel/mem/paging.h"
 #include "kernel/io/console.h"
 
-// Libérer le processeur: le processus courant arrête et on choisit un autre
+// yield() - laisser la main à un autre processus
+// Utile quand un processus veut être fair et laisser les autres tourner
 void yield(void)
 {
-    // Mettre le processus courant comme exécutable (non comme running)
+    // Marquer le processus courant comme prêt à tourner à nouveau
     if (current_process != NULL && current_process->state == PROC_RUNNING) {
         current_process->state = PROC_RUNNABLE;
     }
@@ -22,11 +23,11 @@ void yield(void)
     scheduler();
 }
 
-// Ordonnanceur: cherche un processus exécutable et le lance
-// Fait tourner les processus à tour de rôle (round-robin)
+// L'ordonnanceur principal - le cœur du système de multitasking
+// Cherche un processus prêt à tourner et le lance
 void scheduler(void)
 {
-    // Index du processus courant (pour le round-robin)
+    // On garde en mémoire où on en était dans la liste des processus
     static int current_index = 0;
     
     // Boucle infinie: parcourir les processus et les exécuter
