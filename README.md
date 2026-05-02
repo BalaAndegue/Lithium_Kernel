@@ -6,9 +6,9 @@ Inspired by xv6, this implementation focuses on educational clarity with modular
 
 ## Academic Supervision
 
-**Professor Alain Tchana** - Process and memory management modules
-
+**Professor Alain Tchana** 
 ## Project Team
+- **Bala Andegue**
 - **Gabrielle Nana**
 - **Teme Israel** 
 - **Tamwo Steve**
@@ -171,6 +171,11 @@ gdb-multiarch kernel/kernel.elf
 | `make all`    | Build kernel + disk image - Not implemented      |
 
 ## Development Progress
+
+### Current Project Status
+- **Statut** : En développement - Semaine 3
+- **Bloc actif** : Bloc 3 - Processus
+- **Suivi** : voir `TODO.md` pour la feuille de route et les tâches en cours
 
 ### Completed Blocks
 - **Bloc 1**: Boot + Console ✅ (Semaine 1)
