@@ -4,7 +4,7 @@ LD = $(CROSS_COMPILE)ld
 QEMU = qemu-system-riscv64
 
 # Options du compilateur C
-CFLAGS = -Wall -Werror -O2 -fno-omit-frame-pointer -ggdb -gdwarf-2
+CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib
 CFLAGS += -mno-relax -I include
 
@@ -24,6 +24,7 @@ BLOCK1_OBJS = \
 BLOCK2_OBJS = \
 	kernel/io/uart.o \
 	kernel/io/console.o \
+	kernel/string.o \
 	kernel/mem/physmem.o \
 	kernel/mem/paging.o
 

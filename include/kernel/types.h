@@ -13,6 +13,15 @@ typedef signed short   int16;
 typedef signed int     int32;
 typedef signed long    int64;
 
+typedef uint64  uintptr;
+
+//Booléen
+typedef int bool;
+#define true 1
+#define false 0
+
+// NULL
+#define NULL ((void*)0)
 #endif
 
 

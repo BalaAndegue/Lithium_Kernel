@@ -3,6 +3,8 @@
 #include "kernel/io/console.h"
 #include "kernel/mem/physmem.h"
 #include "kernel/mem/paging.h"
+#include "kernel/proc/control.h"
+#include "kernel/proc/scheduler.h"
 
 // Entry point of the Lithium Kernel
 void kernel_main(void)
@@ -34,5 +36,34 @@ void kernel_main(void)
     printf("\nMemory management initialized successfully!\n");
     
     // Keep the kernel running
-    while (1);
+
+    printf("\n--- Bloc 3: Process Management ---\n");
+    proc_init();
+    
+    printf("\n--- Test: fork() ---\n");
+    int pid = fork();
+    if (pid == 0) {
+        printf("Child process: PID=%d\n", myproc()->pid);
+        exit(0);
+    } else if (pid > 0) {
+        printf("Parent: created child PID=%d\n", pid);
+        int status;
+        wait((uint64)&status);
+        printf("Parent: child exited with status %d\n", status);
+    }
+    
+    printf("\nBloc 3: SUCCESS!\n");
+    printf("Starting scheduler...\n");
+    
+    // L'ordonnanceur boucle infiniment
+    scheduler();
+    
+    // Normalement, on n'arrive jamais ici
+    // Mais par sécurité, on ajoute une boucle infinie
+    printf("ERROR: scheduler returned! Halting...\n");
+    while (1) {
+        asm volatile("wfi");
+    }
+
 }
+
