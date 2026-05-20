@@ -31,7 +31,7 @@ void kernel_main(void)
     printf("Freed page at: %p\n", (void*)page1);
     
     uint64 free_pages = get_free_pages_count();
-    printf("Free pages: %d\n", free_pages);
+    printf("Free pages: %u\n", free_pages);
     
     printf("\nMemory management initialized successfully!\n");
     

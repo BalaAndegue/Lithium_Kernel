@@ -43,12 +43,12 @@ void physmem_init(void)
     
     // Afficher les constantes pour debug
     printf("=== PHYS MEMORY DEBUG ===\n");
-    printf("sizeof(uint64) = %d\n", sizeof(uint64));
-    printf("PAGE_SIZE = %d\n", PAGE_SIZE);
-    printf("PHYS_MEM_SIZE = %d\n", PHYS_MEM_SIZE);
-    printf("NUM_PAGES = %d\n", NUM_PAGES);
-    printf("KERNEL_BASE_ADDR = 0x%lx\n", KERNEL_BASE_ADDR);
-    printf("&_end = 0x%lx\n", (uint64)&_end);
+    printf("sizeof(uint64) = %u\n", (uint64)sizeof(uint64));
+    printf("PAGE_SIZE = %u\n", PAGE_SIZE);
+    printf("PHYS_MEM_SIZE = %u\n", PHYS_MEM_SIZE);
+    printf("NUM_PAGES = %u\n", NUM_PAGES);
+    printf("KERNEL_BASE_ADDR = %p\n", (void*)KERNEL_BASE_ADDR);
+    printf("&_end = %p\n", &_end);
     printf("========================\n");
     
     // Vérifier que NUM_PAGES n'est pas 0
@@ -58,7 +58,7 @@ void physmem_init(void)
     }
     
     kernel_size = kernel_end - KERNEL_BASE_ADDR;
-    printf("kernel_size = %d bytes\n", kernel_size);
+    printf("kernel_size = %u bytes\n", kernel_size);
     
     // Initialiser toutes les pages comme libres
     for (i = 0; i < NUM_PAGES / 8; i++) {
@@ -68,11 +68,11 @@ void physmem_init(void)
     
     // Calculer la première page libre après le noyau
     first_free_page = (kernel_size + PAGE_SIZE - 1) / PAGE_SIZE;
-    printf("first_free_page = %d\n", first_free_page);
+    printf("first_free_page = %u\n", first_free_page);
     
     // Vérifier les limites
     if (first_free_page > NUM_PAGES) {
-        printf("WARNING: first_free_page (%d) > NUM_PAGES (%d)\n", first_free_page, NUM_PAGES);
+        printf("WARNING: first_free_page (%u) > NUM_PAGES (%u)\n", first_free_page, NUM_PAGES);
         first_free_page = NUM_PAGES;
     }
     
@@ -83,7 +83,7 @@ void physmem_init(void)
         }
     }
     
-    printf("physmem_init: %d pages total, %d pages free\n", NUM_PAGES, free_pages_count);
+    printf("physmem_init: %u pages total, %u pages free\n", NUM_PAGES, free_pages_count);
 }
 
 uint64 physmem_alloc_page(void)
@@ -106,14 +106,14 @@ void free_physical_page(uint64 phys_addr)
     uint64 page_index;
     
     if (phys_addr < KERNEL_BASE_ADDR || phys_addr >= KERNEL_BASE_ADDR + PHYS_MEM_SIZE) {
-        printf("free_physical_page: address 0x%lx out of range\n", phys_addr);
+        printf("free_physical_page: address %p out of range\n", (void*)phys_addr);
         return;
     }
     
     page_index = (phys_addr - KERNEL_BASE_ADDR) / PAGE_SIZE;
     
     if (page_index >= NUM_PAGES) {
-        printf("free_physical_page: page index %d out of range\n", page_index);
+        printf("free_physical_page: page index %u out of range\n", page_index);
         return;
     }
     

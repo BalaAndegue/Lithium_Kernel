@@ -132,7 +132,7 @@ void paging_init(void)
     // Identity map the first 128 MB
     for (i = 0; i < PHYS_MEM_SIZE; i += PAGE_SIZE) {
         if (map_page(kernel_pagetable, i, i, PTE_R | PTE_W | PTE_X) != 0) {
-            printf("paging_init: failed to map page %p\n", i);
+            printf("paging_init: failed to map page %p\n", (void*)i);
             return;
         }
     }
