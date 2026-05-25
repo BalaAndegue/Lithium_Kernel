@@ -46,9 +46,24 @@ BLOCK4_OBJS = \
 	kernel/sys/syscall.o
 
 # ===========================================================================
+# Bloc 5: Système de fichiers + Pilote disque VirtIO
+# ===========================================================================
+BLOCK5_OBJS = \
+	kernel/mem/spinlock.o \
+	kernel/fs/sleeplock.o \
+	kernel/fs/buffer.o \
+	kernel/fs/block.o \
+	kernel/fs/log.o \
+	kernel/fs/inode.o \
+	kernel/fs/file.o \
+	kernel/fs/pipe.o \
+	kernel/fs/file_system.o \
+	kernel/fs/virtio_disk.o
+
+# ===========================================================================
 # Lier tous les fichiers pour créer le kernel
 # ===========================================================================
-KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS) $(BLOCK4_OBJS)
+KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS) $(BLOCK4_OBJS) $(BLOCK5_OBJS)
 KERNEL = kernel/kernel.elf
 
 # Règle par défaut: construire le kernel
