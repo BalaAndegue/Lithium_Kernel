@@ -38,15 +38,17 @@ BLOCK3_OBJS = \
 	kernel/proc/switch_context.o
 
 # ===========================================================================
-# Bloc 4: Appels système (à uncomment plus tard)
+# Bloc 4: Pièges + Appels système
 # ===========================================================================
-# BLOCK4_OBJS = \
-# 	kernel/sys/syscall.o
+BLOCK4_OBJS = \
+	kernel/trap/trap.o \
+	kernel/trap/plic.o \
+	kernel/sys/syscall.o
 
 # ===========================================================================
 # Lier tous les fichiers pour créer le kernel
 # ===========================================================================
-KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS)
+KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS) $(BLOCK4_OBJS)
 KERNEL = kernel/kernel.elf
 
 # Règle par défaut: construire le kernel
@@ -66,6 +68,7 @@ $(KERNEL): $(KERNEL_OBJS)
 
 clean:
 	rm -f $(KERNEL_OBJS) $(KERNEL)
+	find . -name "*.d" -delete
 
 # Exécuter le kernel dans QEMU
 qemu: $(KERNEL)
