@@ -40,7 +40,6 @@ lithium-kernel/
 ├── Makefile                    # Build automation
 ├── README.md                   # Project documentation
 ├── TODO.md                     # Development roadmap
-├── RAPPORT_BLOC2_MEMOIRE.md    # Memory management report
 ├── .gitignore
 ├── .gdbinit
 │
@@ -63,16 +62,16 @@ lithium-kernel/
 │   ├── kernel.ld               # Linker script
 │   ├── main.c                  # kernel_main() – initialization
 │   ├── setup.c                 # Low-level CPU setup
-│   ├── fs/                     # File system implementation (mostly stubs)
+│   ├── fs/                     # File system implementation (Bloc 5 ✅)
 │   │   ├── block.c             # Block device interface
-│   │   ├── buffer.c            # Buffer cache
-│   │   ├── file.c              # File operations
-│   │   ├── file_system.c       # File system core
-│   │   ├── inode.c             # Inode management
-│   │   ├── log.c               # File system logging
-│   │   ├── pipe.c              # Pipe implementation
-│   │   ├── sleeplock.c         # Sleep locks
-│   │   └── virtio_disk.c       # VirtIO disk driver
+│   │   ├── buffer.c            # Buffer cache LRU (30 buffers)
+│   │   ├── file.c              # File table (100 entrées)
+│   │   ├── file_system.c       # Séquence d'init du FS
+│   │   ├── inode.c             # Cache d'inodes, read/write
+│   │   ├── log.c               # Journal write-ahead (transactions)
+│   │   ├── pipe.c              # Pipe IPC (buffer circulaire 512 B)
+│   │   ├── sleeplock.c         # Verrou avec mise en sommeil
+│   │   └── virtio_disk.c       # Pilote disque VirtIO MMIO
 │   ├── io/                     # Drivers
 │   │   ├── console.c           # Console I/O (implemented)
 │   │   ├── debug.c             # Debug utilities
@@ -94,14 +93,17 @@ lithium-kernel/
 │   │   ├── process.c           # Process lifecycle management
 │   │   ├── scheduler.c         # Round-robin scheduler
 │   │   └── switch_context.S    # Context switching (assembly)
-│   ├── sys/                    # System calls (stubs)
-│   └── trap/                   # Exception handling (stubs)
+│   ├── sys/                    # System calls (Bloc 4 ✅)
+│   │   └── syscall.c           # Dispatcher + 8 syscalls
+│   └── trap/                   # Gestion des pièges (Bloc 4 ✅)
+│       ├── trap.c              # kerneltrap, usertrap, usertrapret
+│       └── plic.c              # Contrôleur d'interruptions PLIC
 │
 ├── make_fs/                    # Disk image build directory
 ├── tools/                      # Host utilities
-└── user/                       # User programs (stubs)
-    ├── progs/                  # User binaries
-    └── ulibc/                  # User libc
+└── user/                       # Espace utilisateur (Bloc 6 ✅)
+    ├── init.c                  # Premier processus (fork/wait/exit)
+    └── ulibc/                  # Bibliothèque C minimale (ulibc.c)
 ```
 
 ## Quick Start
@@ -136,14 +138,19 @@ make
 make qemu
 ```
 
-Expected output (Bloc 1 + Bloc 2 + Bloc 3):
+Expected output (Bloc 1 → Bloc 6):
 ```
 Lithium Kernel starting...
 uart initialized.
 mem_init: 128 MB available
-proc_init: initializing process subsystem
+trap_init: stvec configuré sur kerneltrap
+plic_init: UART IRQ=10 et VirtIO IRQ=1 activés
+fs_init: initialisation du système de fichiers (dev=1)
+buf_cache_init: 30 buffers x 512 octets
+inode_init: 50 inodes, ...
+file_init: table de 100 fichiers ouverts
 proc_init: init process PID=1
-scheduler: entering main loop
+init: Lithium Kernel — premier processus utilisateur
 ```
 
 ### 4. Debug
@@ -163,32 +170,30 @@ gdb-multiarch kernel/kernel.elf
 
 | Command       | Description                                      |
 |---------------|--------------------------------------------------|
-| `make`        | Build kernel image (`kernel/kernel.elf`)         |
-| `make clean`  | Remove all object files and kernel image         |
+| `make`        | Build kernel (`kernel/kernel.elf`) + userspace (`user/init.elf`) |
+| `make clean`  | Remove all object files, kernel and user images  |
 | `make qemu`   | Launch QEMU with the kernel                      |
 | `make debug`  | Launch QEMU in debug mode (listening on port 1234)|
-| `make fs`     | Build disk image (`make_fs/fs.img`) - Not implemented |
-| `make all`    | Build kernel + disk image - Not implemented      |
 
 ## Development Progress
 
 ### Current Project Status
-- **Statut** : En développement - Semaine 3
-- **Bloc actif** : Bloc 3 - Processus
+- **Statut** : En développement - Semaine 8
+- **Bloc actif** : Finalisation — tous les blocs principaux implémentés
 - **Suivi** : voir `TODO.md` pour la feuille de route et les tâches en cours
 
 ### Completed Blocks
 - **Bloc 1**: Boot + Console ✅ (Semaine 1)
-- **Bloc 2**: Memory Management ✅ (Semaine 2) - Report: `RAPPORT_BLOC2_MEMOIRE.md`
-- **Bloc 3**: Process Management ✅ (Semaine 3-4) - 13 commits pushed
+- **Bloc 2**: Memory Management ✅ (Semaine 2)
+- **Bloc 3**: Process Management ✅ (Semaine 3-4)
+- **Bloc 4**: Traps + Syscalls ✅ (Semaine 5) — kerneltrap, PLIC, 8 syscalls
+- **Bloc 5**: File System + VirtIO ✅ (Semaine 6-7) — buffer cache, log, inode, file, pipe, virtio_disk
+- **Bloc 6**: User Space ✅ (Semaine 8) — ulibc, init, wrappers syscall
 
-### Current Status
-- **Bloc 4**: System calls + Traps (Semaine 5) - In progress
-- **Bloc 5**: File System + Drivers (Semaine 6-7) - Planned
-- **Bloc 6**: User Space (Semaine 8) - Planned
+### Remaining
+- `kernel/mem/operations.c` et `virtual_memory.c` — utilitaires mémoire avancés
 
 ### Documentation
-- `RAPPORT_BLOC2_MEMOIRE.md`: Detailed memory management implementation report
 - `TODO.md`: Development roadmap and task breakdown
 - All code includes French comments for clarity
 
@@ -197,13 +202,13 @@ gdb-multiarch kernel/kernel.elf
 | Module     | Location               | Status | Description                                                                 |
 |------------|------------------------|--------|-----------------------------------------------------------------------------|
 | **Boot**   | `entry.S`, `setup.c`   | ✅ Implémenté | CPU initialization, stack setup, jump to `kernel_main()`                    |
-| **Memory** | `mem/`                 | 🟡 Partiel | Physical page allocator (bitmap), SV39 page tables (paging.c, physmem.c implémentés) |
-| **Proc**   | `proc/`                | ✅ Implémenté | Process lifecycle (`fork`, `exit`, `wait`), round-robin scheduler (Bloc 3 terminé) |
-| **Trap**   | `trap/`                | ❌ Stub | Exception handling, interrupt routing, timer interrupts                     |
-| **Syscall**| `sys/`                 | ❌ Stub | User→kernel interface (`write`, `read`, `fork`, `exec`, `exit`, `wait`)      |
-| **Driver** | `io/`                  | 🟡 Partiel | Serial output (UART implémenté), console I/O (console.c implémenté)         |
-| **FS**     | `fs/`                  | ❌ Stub | Simple UNIX file system (inodes, directories, block cache, VirtIO disk)     |
-| **User**   | `user/`                | ❌ Stub | First user process (`init`), system call wrappers                           |
+| **Memory** | `mem/`                 | 🟡 Partiel | Physical page allocator (bitmap), SV39 page tables, spinlock implémentés    |
+| **Proc**   | `proc/`                | ✅ Implémenté | Process lifecycle (`fork`, `exit`, `wait`), round-robin scheduler           |
+| **Trap**   | `trap/`                | ✅ Implémenté | `kerneltrap` (timer, external, ecall), PLIC init/claim/complete             |
+| **Syscall**| `sys/`                 | ✅ Implémenté | Dispatcher + 8 syscalls : fork, exit, wait, read, write, getpid, sleep, yield |
+| **Driver** | `io/`                  | ✅ Implémenté | UART + console I/O, VirtIO disk driver (virtio_disk.c)                      |
+| **FS**     | `fs/`                  | ✅ Implémenté | Buffer cache LRU, write-ahead log, inode cache, file table, pipe            |
+| **User**   | `user/`                | ✅ Implémenté | `init.c` (premier processus), `ulibc` (printf, fork, exit, wait...)         |
 
 ## Key Data Structures
 
@@ -296,11 +301,10 @@ struct proghdr {
 
 The project follows a structured commit approach with logical groupings:
 
-### Recent Commits (Bloc 3 - Process Management)
-- **13 commits** pushed to GitHub with detailed commit messages
-- Each commit represents a logical unit of functionality
-- French comments added throughout the codebase
-- Professional commit messages following conventional standards
+- Branches nommées par contributeur (`bala`, `gabrielle`) — chaque branche représente un cycle de travail
+- Commits `Co-Authored-By` pour le suivi des contributions
+- 3 Pull Requests mergées sur `main` (PR1 bloc4 · PR2 bloc5 · PR3 bloc6)
+- Messages de commit en français, style conventionnel (`feat`, `build`, `docs`)
 
 ## Documentation
 
@@ -440,7 +444,7 @@ furnished to do so, subject to the following conditions...
 
 ---
 
-**Status**: 🟡 In development – Week 1 (Boot + UART)  
-**Last updated**: \today
+**Status**: 🟢 Blocs 1–6 implémentés — en finalisation  
+**Last updated**: Mai 2026
 
 
