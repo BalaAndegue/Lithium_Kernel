@@ -61,17 +61,31 @@ BLOCK5_OBJS = \
 	kernel/fs/virtio_disk.o
 
 # ===========================================================================
+# Bloc 6: Espace utilisateur (ulibc + init)
+# ===========================================================================
+USER_CFLAGS = $(CFLAGS) -I include
+USER_OBJS = \
+	user/ulibc/ulibc.o \
+	user/init.o
+
+USER_BIN = user/init.elf
+
+# ===========================================================================
 # Lier tous les fichiers pour créer le kernel
 # ===========================================================================
 KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS) $(BLOCK4_OBJS) $(BLOCK5_OBJS)
 KERNEL = kernel/kernel.elf
 
-# Règle par défaut: construire le kernel
-all: $(KERNEL)
+# Règle par défaut: construire le kernel et les programmes utilisateur
+all: $(KERNEL) $(USER_BIN)
 
-# Lier les objets en un seul exécutable
+# Lier le kernel
 $(KERNEL): $(KERNEL_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
+
+# Lier les programmes utilisateur (pas de stdlib, entry = _start)
+$(USER_BIN): $(USER_OBJS)
+	$(LD) -z max-page-size=4096 -e _start -o $@ $^
 
 # Compiler les fichiers C en objets
 %.o: %.c
@@ -82,10 +96,10 @@ $(KERNEL): $(KERNEL_OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(KERNEL_OBJS) $(KERNEL)
+	rm -f $(KERNEL_OBJS) $(KERNEL) $(USER_OBJS) $(USER_BIN)
 	find . -name "*.d" -delete
 
-# Exécuter le kernel dans QEMU
+# Exécuter le kernel dans QEMU avec le disque utilisateur
 qemu: $(KERNEL)
 	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic
 
