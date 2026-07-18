@@ -128,6 +128,14 @@ static void print_hex(uint64 n)
 }
 
 // ----------------------------------------------------------------------------
+// console_putchar - Envoie un caractère sur la console UART
+// ----------------------------------------------------------------------------
+void console_putchar(char c)
+{
+    uart_putchar(c);
+}
+
+// ----------------------------------------------------------------------------
 // printf - Affiche une chaîne formatée (version minimale)
 // ----------------------------------------------------------------------------
 // Formats supportés :

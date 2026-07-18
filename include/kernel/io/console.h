@@ -5,5 +5,6 @@
 #include "kernel/types.h"
 
 void printf(char *fmt, ...);
+void console_putchar(char c);
 
 #endif

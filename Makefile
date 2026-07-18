@@ -19,11 +19,13 @@ BLOCK1_OBJS = \
 	kernel/main.o
 
 # ===========================================================================
-# Bloc 2: Gestion de la mémoire
+# Bloc 2: Gestion de la mémoire + IO + Debug
 # ===========================================================================
 BLOCK2_OBJS = \
 	kernel/io/uart.o \
 	kernel/io/console.o \
+	kernel/io/printk.o \
+	kernel/io/kpanic.o \
 	kernel/string.o \
 	kernel/mem/physmem.o \
 	kernel/mem/paging.o
