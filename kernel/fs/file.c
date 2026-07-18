@@ -8,6 +8,7 @@
 #include "kernel/fs/file.h"
 #include "kernel/fs/pipe.h"
 #include "kernel/fs/inode.h"
+#include "kernel/fs/log.h"
 #include "kernel/mem/spinlock.h"
 #include "kernel/io/console.h"
 

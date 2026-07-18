@@ -10,6 +10,7 @@
 #include "kernel/mem/physmem.h"
 #include "kernel/mem/paging.h"
 #include "kernel/mem/layout.h"
+#include "kernel/mem/spinlock.h"
 #include "kernel/io/console.h"
 
 // ----------------------------------------------------------------------------
@@ -135,15 +136,23 @@ int wait(uint64 status_addr)
     return -1;
 }
 
-void sleep(void *chan)
+void sleep(void *chan, struct spinlock *lk)
 {
     struct proc *p = current_process;
     if (p == NULL) return;
     
     (void)chan;
     
+    // Release spinlock before sleeping
+    if (lk != NULL)
+        spinlock_release(lk);
+    
     p->state = PROC_SLEEPING;
     scheduler();
+    
+    // Re-acquire spinlock after waking up
+    if (lk != NULL)
+        spinlock_acquire(lk);
 }
 
 void wakeup(void *chan)

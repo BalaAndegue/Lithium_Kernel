@@ -9,6 +9,7 @@
 #define KERNEL_FS_LOG_H
 
 #include "kernel/types.h"
+#include "kernel/fs/buffer.h"
 
 // Initialiser le log (lecture de l'en-tête log sur le disque)
 void log_init(int dev, int start, int size);

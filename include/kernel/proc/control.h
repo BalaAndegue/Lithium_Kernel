@@ -8,6 +8,7 @@
 
 #include "kernel/types.h"
 #include "kernel/proc/process.h"
+#include "kernel/mem/spinlock.h"
 
 // Initialiser la gestion des processus
 void proc_init(void);
@@ -21,7 +22,7 @@ int wait(uint64 status_addr);  // Attendre qu'un enfant se termine
 struct proc* myproc(void);
 
 // Faire dormir et réveiller des processus
-void sleep(void *chan);   // Endormir le processus courant
+void sleep(void *chan, struct spinlock *lk);   // Endormir le processus courant (lk optionnel)
 void wakeup(void *chan);  // Réveiller les processus qui dorment
 
 // Allouer et libérer un processus
