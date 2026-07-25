@@ -73,17 +73,30 @@ USER_OBJS = \
 USER_BIN = user/init.elf
 
 # ===========================================================================
+# Bootloader minimal
+# ===========================================================================
+BOOT_OBJS = \
+	boot/boot.o
+BOOT = boot/boot.elf
+BOOT_BIN = boot/boot.bin
+KERNEL_BIN = kernel/kernel.bin
+
+# ===========================================================================
 # Lier tous les fichiers pour créer le kernel
 # ===========================================================================
 KERNEL_OBJS = $(BLOCK1_OBJS) $(BLOCK2_OBJS) $(BLOCK3_OBJS) $(BLOCK4_OBJS) $(BLOCK5_OBJS)
 KERNEL = kernel/kernel.elf
 
 # Règle par défaut: construire le kernel et les programmes utilisateur
-all: $(KERNEL) $(USER_BIN)
+all: $(KERNEL) $(USER_BIN) $(BOOT)
 
 # Lier le kernel
 $(KERNEL): $(KERNEL_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
+
+# Lier le bootloader
+$(BOOT): $(BOOT_OBJS)
+	$(LD) -T boot/boot.ld -o $@ $^
 
 # Lier les programmes utilisateur (pas de stdlib, entry = _start)
 $(USER_BIN): $(USER_OBJS)
@@ -97,16 +110,28 @@ $(USER_BIN): $(USER_OBJS)
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(BOOT_BIN): $(BOOT)
+	$(CROSS_COMPILE)objcopy -O binary $< $@
+
+$(KERNEL_BIN): $(KERNEL)
+	$(CROSS_COMPILE)objcopy -O binary $< $@
+
 clean:
-	rm -f $(KERNEL_OBJS) $(KERNEL) $(USER_OBJS) $(USER_BIN)
+	rm -f $(KERNEL_OBJS) $(KERNEL) $(USER_OBJS) $(USER_BIN) $(BOOT_OBJS) $(BOOT) $(BOOT_BIN) $(KERNEL_BIN)
 	find . -name "*.d" -delete
 
-# Exécuter le kernel dans QEMU avec le disque utilisateur
-qemu: $(KERNEL)
-	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic
+# Exécuter le kernel dans QEMU avec le disque utilisateur via bootloader
+qemu: $(KERNEL) $(BOOT_BIN) $(KERNEL_BIN)
+	$(QEMU) -machine virt -bios none \
+		-device loader,addr=0x1000,file=$(BOOT_BIN),force-raw=true \
+		-device loader,addr=0x80000000,file=$(KERNEL_BIN),force-raw=true \
+		-nographic
 
 # Exécuter en mode debug (attendre gdb)
-debug: $(KERNEL)
-	$(QEMU) -machine virt -bios none -kernel $(KERNEL) -nographic -s -S
+debug: $(KERNEL) $(BOOT_BIN) $(KERNEL_BIN)
+	$(QEMU) -machine virt -bios none \
+		-device loader,addr=0x1000,file=$(BOOT_BIN),force-raw=true \
+		-device loader,addr=0x80000000,file=$(KERNEL_BIN),force-raw=true \
+		-nographic -s -S
 
 .PHONY: all clean qemu debug
