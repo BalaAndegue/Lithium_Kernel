@@ -1,9 +1,7 @@
 #include "kernel/io/kpanic.h"
 #include "kernel/io/uart.h"
+#include "kernel/io/printk.h"
 #include <stdarg.h>
-
-// Forward declare printk to avoid circular dependency
-extern int printk(const char *fmt, ...);
 
 // Global panic context
 static const char *panic_file = "?";
@@ -68,14 +66,12 @@ void panic(const char *fmt, ...)
         uart_puts("\n");
     }
     
-    // Print error message using printk if available
+    // Print error message using the shared printk formatter
     if (fmt) {
         uart_puts("Error: ");
         va_list ap;
         va_start(ap, fmt);
-        // Note: we can't use printk with va_list easily, so we'll just print the format string
-        // A better solution would implement vsnprintf
-        uart_puts((char*)fmt);
+        vprintk(fmt, ap);
         va_end(ap);
         uart_puts("\n");
     }

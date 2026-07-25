@@ -6,6 +6,10 @@
 #include "kernel/proc/control.h"
 #include "kernel/proc/scheduler.h"
 
+#ifdef PANIC_TEST
+extern void panic_test(void);
+#endif
+
 // Entry point of the Lithium Kernel
 void kernel_main(void)
 {
@@ -34,6 +38,10 @@ void kernel_main(void)
     printf("Free pages: %u\n", free_pages);
     
     printf("\nMemory management initialized successfully!\n");
+
+#ifdef PANIC_TEST
+    panic_test();
+#endif
     
     // Keep the kernel running
 
