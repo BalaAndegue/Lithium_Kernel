@@ -26,12 +26,13 @@
 
 //Addresses virtuelles (pour plus tard)
 
-// Decalage pour la memoire virtuelle (actuellement identite)
-//#define KERNEL_OFFSET 0UL
+// Noyau en high-half : on décale l'espace virtuel par rapport à l'espace physique.
+// La mémoire physique commence à 0x80000000 et est exposée en virtuel à 0xC0000000.
+#define KERNEL_VIRT_BASE 0xC0000000UL
+#define PHYS_TO_VIRT_OFFSET (KERNEL_VIRT_BASE - KERNEL_BASE_ADDR)
 
 //Conversion des addresses physiques en virtuelles et inversement
-
-#define phys_to_virt(phys) ((void *)((uint64)(phys) ))
-#define virt_to_phys(virt) ((uint64)(virt) )
+#define phys_to_virt(phys) ((void *)((uint64)(phys) + PHYS_TO_VIRT_OFFSET))
+#define virt_to_phys(virt) ((uint64)(virt) - PHYS_TO_VIRT_OFFSET)
 
 #endif 

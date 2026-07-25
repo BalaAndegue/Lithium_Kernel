@@ -9,6 +9,23 @@
 #include "kernel/io/console.h"
 
 static void *kernel_pagetable = NULL;
+static int paging_active = 0;
+
+static void *phys_to_virt_helper(uint64 phys)
+{
+    if (!paging_active) {
+        return (void*)(uint64)phys;
+    }
+    return phys_to_virt(phys);
+}
+
+static uint64 virt_to_phys_helper(void *virt)
+{
+    if (!paging_active) {
+        return (uint64)virt;
+    }
+    return virt_to_phys(virt);
+}
 
 // Create a new page table
 void* create_page_table(void)
@@ -17,7 +34,7 @@ void* create_page_table(void)
     uint64 phys = physmem_alloc_page();
     if (phys == 0) return NULL;
     
-    uint64 *table = (uint64*)phys_to_virt(phys);
+    uint64 *table = (uint64*)phys_to_virt_helper(phys);
     for (int i = 0; i < 512; i++) {
         table[i] = 0;
     }
@@ -28,7 +45,7 @@ void* create_page_table(void)
 void free_page_table(void *pagetable)
 {
     if (pagetable != NULL) {
-        free_physical_page(virt_to_phys(pagetable));
+        free_physical_page(virt_to_phys_helper(pagetable));
     }
 }
 
@@ -48,12 +65,12 @@ static uint64* walk(void *pagetable, uint64 virt_addr, int alloc)
         uint64 phys = physmem_alloc_page();
         if (phys == 0) return NULL;
         *pte_l2 = MAKE_PTE(phys, PTE_V);
-        uint64 *level1 = (uint64*)phys_to_virt(phys);
+        uint64 *level1 = (uint64*)phys_to_virt_helper(phys);
         for (int i = 0; i < 512; i++) level1[i] = 0;
     }
     
     // Level 1
-    uint64 *level1 = (uint64*)phys_to_virt(PTE_ADDR(*pte_l2));
+    uint64 *level1 = (uint64*)phys_to_virt_helper(PTE_ADDR(*pte_l2));
     uint64 *pte_l1 = &level1[vpn1];
     
     if (!(*pte_l1 & PTE_V)) {
@@ -62,12 +79,12 @@ static uint64* walk(void *pagetable, uint64 virt_addr, int alloc)
         uint64 phys = physmem_alloc_page();
         if (phys == 0) return NULL;
         *pte_l1 = MAKE_PTE(phys, PTE_V);
-        uint64 *level0 = (uint64*)phys_to_virt(phys);
+        uint64 *level0 = (uint64*)phys_to_virt_helper(phys);
         for (int i = 0; i < 512; i++) level0[i] = 0;
     }
     
     // Level 0
-    uint64 *level0 = (uint64*)phys_to_virt(PTE_ADDR(*pte_l1));
+    uint64 *level0 = (uint64*)phys_to_virt_helper(PTE_ADDR(*pte_l1));
     return &level0[vpn0];
 }
 
@@ -103,11 +120,12 @@ uint64 walk_page_table(void *pagetable, uint64 virt_addr)
 // Switch to the given page table
 void switch_page_table(void *pagetable)
 {
-    uint64 phys = virt_to_phys(pagetable);
+    uint64 phys = virt_to_phys_helper(pagetable);
     uint64 satp = (8UL << 60) | ((phys >> 12) & 0x0FFFFFFFFFFFFFUL);
     
     asm volatile("csrw satp, %0" : : "r"(satp));
     asm volatile("sfence.vma zero, zero");
+    paging_active = 1;
 }
 
 // Get the current active page table
@@ -119,6 +137,8 @@ void* get_current_page_table(void)
 // Initialize virtual memory paging
 void paging_init(void)
 {
+    extern uint8 _end;
+    uint64 kernel_size = (uint64)&_end - KERNEL_BASE_ADDR;
     uint64 i;
     
     printf("paging_init: initializing SV39 page tables\n");
@@ -129,11 +149,19 @@ void paging_init(void)
         return;
     }
     
-    // Identity map the first 128 MB
+    // Map physical memory at a high-half virtual offset.
+    // Keep the kernel region identity-mapped for safe transition.
     for (i = 0; i < PHYS_MEM_SIZE; i += PAGE_SIZE) {
-        if (map_page(kernel_pagetable, i, i, PTE_R | PTE_W | PTE_X) != 0) {
-            printf("paging_init: failed to map page %p\n", (void*)i);
+        uint64 virt = i + PHYS_TO_VIRT_OFFSET;
+        if (map_page(kernel_pagetable, virt, i, PTE_R | PTE_W | PTE_X) != 0) {
+            printf("paging_init: failed to map page %p\n", (void*)virt);
             return;
+        }
+        if (i < kernel_size) {
+            if (map_page(kernel_pagetable, i, i, PTE_R | PTE_W | PTE_X) != 0) {
+                printf("paging_init: failed to identity map kernel page %p\n", (void*)i);
+                return;
+            }
         }
     }
     
